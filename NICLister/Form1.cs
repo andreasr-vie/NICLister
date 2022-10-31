@@ -85,8 +85,8 @@ namespace NICLister
                         }
                     }
 
-                    var ipv4list = String.Join(", ", ipv4.ToArray());
-                    var ipv6list = String.Join(", ", ipv6.ToArray());
+                    var ipv4list = String.Join("\r\n", ipv4.ToArray());
+                    var ipv6list = String.Join("\r\n", ipv6.ToArray());
                     var dnsv4List = String.Join("\r\n", dnsv4.ToArray()); 
                     var dnsv6List = String.Join("\r\n", dnsv6.ToArray());
 
