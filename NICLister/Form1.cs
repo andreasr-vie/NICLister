@@ -19,14 +19,22 @@ namespace NICLister
         {
             InitializeComponent();
         }
-
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        class Global
         {
-
+            public static int GridBreite;
+            public static int GridHoehe;
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            //this.AutoSize = true;
+            //this.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            GetInterfaces();
+        }
+
+        public void GetInterfaces()
+        {
+            dataGridView1.RowHeadersVisible = false;
             dataGridView1.ColumnCount = 7;
             dataGridView1.Columns[0].Name = "NIC";
             dataGridView1.Columns[1].Name = "Name";
@@ -36,7 +44,7 @@ namespace NICLister
             dataGridView1.Columns[5].Name = "DNSv4";
             dataGridView1.Columns[6].Name = "DNSv6";
 
-            string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi", "VMware" };
+            string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi"};
             bool ContainsIF = false;
 
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
@@ -87,7 +95,7 @@ namespace NICLister
 
                     var ipv4list = String.Join("\r\n", ipv4.ToArray());
                     var ipv6list = String.Join("\r\n", ipv6.ToArray());
-                    var dnsv4List = String.Join("\r\n", dnsv4.ToArray()); 
+                    var dnsv4List = String.Join("\r\n", dnsv4.ToArray());
                     var dnsv6List = String.Join("\r\n", dnsv6.ToArray());
 
                     dataGridView1.Rows.Add(adapter.Description, adapter.Name, FormatMAC(System.Convert.ToString(adapter.GetPhysicalAddress())), ipv4list, ipv6list, dnsv4List, dnsv6List);
@@ -96,6 +104,8 @@ namespace NICLister
             }
             dataGridView1.AutoResizeColumns();
             dataGridView1.AutoResizeRows();
+            this.Width = dataGridView1.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 20;
+            this.Height = dataGridView1.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 60;
         }
 
         public bool IsIPv6LocalLink(string input)
