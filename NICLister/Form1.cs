@@ -18,35 +18,38 @@ namespace NICLister
         public Form1()
         {
             InitializeComponent();
+            this.KeyPreview = true;
         }
         class Global
         {
         }
-
         private void Form1_Load(object sender, EventArgs e)
         {
-            //this.AutoSize = true;
-            //this.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             GetInterfaces();
         }
-
         public void GetInterfaces()
         {
+            dataGridView1.Rows.Clear();
             dataGridView1.RowHeadersVisible = false;
-            dataGridView1.ColumnCount = 7;
+            dataGridView1.DefaultCellStyle.Alignment = DataGridViewContentAlignment.TopLeft;
+            dataGridView1.ColumnCount = 8;
             dataGridView1.Columns[0].Name = "Description";
             dataGridView1.Columns[1].Name = "Name";
             dataGridView1.Columns[2].Name = "MAC";
             dataGridView1.Columns[3].Name = "IPv4";
             dataGridView1.Columns[4].Name = "DNS";
             dataGridView1.Columns[5].Name = "Gateway";
-            dataGridView1.Columns[6].Name = "DHCP-Server";
+            dataGridView1.Columns[6].Name = "DHCP Active";
+            dataGridView1.Columns[7].Name = "DHCP-Server";
 
-            string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi"};
+            //dataGridView1.Font = new System.Drawing.Font()
+            //dataGridView1.Columns[3].DefaultCellStyle.Font = new System.Drawing.Font("Courier New", 10.00F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+
+            string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi", "VMware"};
             bool ContainsIF = false;
 
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
-            foreach (NetworkInterface adapter in adapters)
+            foreach (NetworkInterface adapter in adapters) // Schleife die jeden einzelnen Adapter im System abarbeitet
             {
                 foreach (string x in ExcludeIFList) // Interfaces filtern
                 {
@@ -66,6 +69,17 @@ namespace NICLister
                     var gwv6 = new List<string>();
                     var dhcpv4 = new List<string>();
                     var dhcpv6 = new List<string>();
+                    string dhcpenabled;
+
+                    // Check if IF is DHCP-enabled
+                    if (adapter.GetIPProperties().GetIPv4Properties().IsDhcpEnabled)
+                    {
+                        dhcpenabled = "YES";
+                    }
+                    else
+                    {
+                        dhcpenabled = "NO";
+                    }
 
                     IPInterfaceProperties properties = adapter.GetIPProperties();
 
@@ -148,16 +162,15 @@ namespace NICLister
                     var dhcplist = String.Join("\r\n", dhcpv4.ToArray());
 
                     // Daten im DataGridView ausgeben
-                    dataGridView1.Rows.Add(adapter.Description, adapter.Name, FormatMAC(System.Convert.ToString(adapter.GetPhysicalAddress())), iplist, dnslist, gwlist, dhcplist);
+                    dataGridView1.Rows.Add(adapter.Description, adapter.Name, FormatMAC(System.Convert.ToString(adapter.GetPhysicalAddress())), iplist, dnslist, gwlist, dhcpenabled, dhcplist);
                 }
                 ContainsIF = false;
             }
             dataGridView1.AutoResizeColumns();
             dataGridView1.AutoResizeRows();
-            this.Width = dataGridView1.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 20;
-            this.Height = dataGridView1.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 60;
+            this.Width = dataGridView1.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 35;
+            this.Height = dataGridView1.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 110;
         }
-
         public bool IsIPv6LocalLink(string input)
         {
             Regex rx = new Regex(@"fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}$");
@@ -166,7 +179,6 @@ namespace NICLister
             else
                 return false;
         }
-
         public int IPtype(string input)
         {
             IPAddress address;
@@ -190,13 +202,20 @@ namespace NICLister
                 return 0;
             }
         }
-
         public string FormatMAC(string input)
         {
             var regex = "(.{2})(.{2})(.{2})(.{2})(.{2})(.{2})";
             var replace = "$1:$2:$3:$4:$5:$6";
             var newformat = Regex.Replace(input, regex, replace);
             return newformat;
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.F5)
+            {
+                GetInterfaces();
+            }
         }
     }
 }
