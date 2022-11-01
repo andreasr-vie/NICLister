@@ -21,8 +21,6 @@ namespace NICLister
         }
         class Global
         {
-            public static int GridBreite;
-            public static int GridHoehe;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -35,14 +33,13 @@ namespace NICLister
         public void GetInterfaces()
         {
             dataGridView1.RowHeadersVisible = false;
-            dataGridView1.ColumnCount = 7;
-            dataGridView1.Columns[0].Name = "NIC";
+            dataGridView1.ColumnCount = 6;
+            dataGridView1.Columns[0].Name = "Description";
             dataGridView1.Columns[1].Name = "Name";
             dataGridView1.Columns[2].Name = "MAC";
             dataGridView1.Columns[3].Name = "IPv4";
-            dataGridView1.Columns[4].Name = "IPv6";
-            dataGridView1.Columns[5].Name = "DNSv4";
-            dataGridView1.Columns[6].Name = "DNSv6";
+            dataGridView1.Columns[4].Name = "DNS";
+            dataGridView1.Columns[5].Name = "Gateway";
 
             string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi"};
             bool ContainsIF = false;
@@ -63,6 +60,9 @@ namespace NICLister
                     var ipv6 = new List<string>();
                     var dnsv4 = new List<string>();
                     var dnsv6 = new List<string>();
+                    var gwv4 = new List<string>();
+                    var gwv6 = new List<string>();
+                    
                     IPInterfaceProperties properties = adapter.GetIPProperties();
                     foreach (IPAddressInformation unicast in properties.UnicastAddresses)
                     {
@@ -93,12 +93,33 @@ namespace NICLister
                         }
                     }
 
-                    var ipv4list = String.Join("\r\n", ipv4.ToArray());
-                    var ipv6list = String.Join("\r\n", ipv6.ToArray());
-                    var dnsv4List = String.Join("\r\n", dnsv4.ToArray());
-                    var dnsv6List = String.Join("\r\n", dnsv6.ToArray());
 
-                    dataGridView1.Rows.Add(adapter.Description, adapter.Name, FormatMAC(System.Convert.ToString(adapter.GetPhysicalAddress())), ipv4list, ipv6list, dnsv4List, dnsv6List);
+                    GatewayIPAddressInformationCollection defaultGW = properties.GatewayAddresses;
+                    if (defaultGW.Count > 0)
+                    {
+                        foreach (GatewayIPAddressInformation address in defaultGW)
+                        {
+                            if (IPtype(address.Address.ToString()) == 6)
+                            {
+                                if (!(IsIPv6LocalLink(address.Address.ToString()))) 
+                                    gwv6.Add(address.Address.ToString());
+                            }
+                            else if (IPtype(address.Address.ToString()) == 4)
+                            {
+                                gwv4.Add(address.Address.ToString());
+                            }
+                        }
+                    }
+
+                    ipv4.AddRange(ipv6);
+                    dnsv4.AddRange(dnsv6);
+                    gwv4.AddRange(gwv6);
+
+                    var iplist = String.Join("\r\n", ipv4.ToArray());
+                    var dnslist = String.Join("\r\n", dnsv4.ToArray());
+                    var gwlist = String.Join("\r\n", gwv4.ToArray());
+
+                    dataGridView1.Rows.Add(adapter.Description, adapter.Name, FormatMAC(System.Convert.ToString(adapter.GetPhysicalAddress())), iplist, dnslist, gwlist);
                 }
                 ContainsIF = false;
             }
