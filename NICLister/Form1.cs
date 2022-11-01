@@ -33,13 +33,14 @@ namespace NICLister
         public void GetInterfaces()
         {
             dataGridView1.RowHeadersVisible = false;
-            dataGridView1.ColumnCount = 6;
+            dataGridView1.ColumnCount = 7;
             dataGridView1.Columns[0].Name = "Description";
             dataGridView1.Columns[1].Name = "Name";
             dataGridView1.Columns[2].Name = "MAC";
             dataGridView1.Columns[3].Name = "IPv4";
             dataGridView1.Columns[4].Name = "DNS";
             dataGridView1.Columns[5].Name = "Gateway";
+            dataGridView1.Columns[6].Name = "DHCP-Server";
 
             string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi"};
             bool ContainsIF = false;
@@ -47,23 +48,28 @@ namespace NICLister
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
             foreach (NetworkInterface adapter in adapters)
             {
-                foreach (string x in ExcludeIFList)
+                foreach (string x in ExcludeIFList) // Interfaces filtern
                 {
                     if (adapter.Description.Contains(x))
                     {
                         ContainsIF = true;
                     }
                 }
-                if (!ContainsIF)
+                if (!ContainsIF) // wenn Interface kein gefiltertes Interface ist
                 {
+                    // Listen fuer Erfassung der Adressen initialisieren
                     var ipv4 = new List<string>();
                     var ipv6 = new List<string>();
                     var dnsv4 = new List<string>();
                     var dnsv6 = new List<string>();
                     var gwv4 = new List<string>();
                     var gwv6 = new List<string>();
-                    
+                    var dhcpv4 = new List<string>();
+                    var dhcpv6 = new List<string>();
+
                     IPInterfaceProperties properties = adapter.GetIPProperties();
+
+                    // IP-Adressen (v4 und v6)
                     foreach (IPAddressInformation unicast in properties.UnicastAddresses)
                     {
                         if (IPtype(unicast.Address.ToString()) == 6)
@@ -77,6 +83,7 @@ namespace NICLister
                         }
                     }
 
+                    // DNS-Server (v4 und v6)
                     IPAddressCollection dnsServers = properties.DnsAddresses;
                     if (dnsServers.Count > 0)
                     {
@@ -93,7 +100,24 @@ namespace NICLister
                         }
                     }
 
+                    // DHCP-Server (v4 und v6)
+                    IPAddressCollection dhcpserver = properties.DhcpServerAddresses;
+                    if (dhcpserver.Count > 0)
+                    {
+                        foreach (IPAddress d in dhcpserver)
+                        {
+                            if (IPtype(d.ToString()) == 6)
+                            {
+                                dhcpv6.Add(d.ToString());
+                            }
+                            else if (IPtype(d.ToString()) == 4)
+                            {
+                                dhcpv4.Add(d.ToString());
+                            }
+                        }
+                    }
 
+                    // Standardgateway (v4 und v6)
                     GatewayIPAddressInformationCollection defaultGW = properties.GatewayAddresses;
                     if (defaultGW.Count > 0)
                     {
@@ -111,15 +135,20 @@ namespace NICLister
                         }
                     }
 
+                    // v4 mit v6 - Listen kombinineren
                     ipv4.AddRange(ipv6);
                     dnsv4.AddRange(dnsv6);
                     gwv4.AddRange(gwv6);
+                    dhcpv4.AddRange(dhcpv6);
 
+                    // Listen formatieren (CR/LF)
                     var iplist = String.Join("\r\n", ipv4.ToArray());
                     var dnslist = String.Join("\r\n", dnsv4.ToArray());
                     var gwlist = String.Join("\r\n", gwv4.ToArray());
+                    var dhcplist = String.Join("\r\n", dhcpv4.ToArray());
 
-                    dataGridView1.Rows.Add(adapter.Description, adapter.Name, FormatMAC(System.Convert.ToString(adapter.GetPhysicalAddress())), iplist, dnslist, gwlist);
+                    // Daten im DataGridView ausgeben
+                    dataGridView1.Rows.Add(adapter.Description, adapter.Name, FormatMAC(System.Convert.ToString(adapter.GetPhysicalAddress())), iplist, dnslist, gwlist, dhcplist);
                 }
                 ContainsIF = false;
             }
