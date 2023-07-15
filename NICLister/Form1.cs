@@ -42,10 +42,8 @@ namespace NICLister
             dataGridView1.Columns[6].Name = "DHCP Active";
             dataGridView1.Columns[7].Name = "DHCP-Server";
 
-            //dataGridView1.Font = new System.Drawing.Font()
-            //dataGridView1.Columns[3].DefaultCellStyle.Font = new System.Drawing.Font("Courier New", 10.00F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 
-            string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi", "VMware"};
+            string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi", "VMware", "Bluetooth"};
             bool ContainsIF = false;
 
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
@@ -168,8 +166,8 @@ namespace NICLister
             }
             dataGridView1.AutoResizeColumns();
             dataGridView1.AutoResizeRows();
-            this.Width = dataGridView1.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 35;
-            this.Height = dataGridView1.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 110;
+            //this.Width = dataGridView1.Columns.GetColumnsWidth(DataGridViewElementStates.Visible) + 35;
+            //this.Height = dataGridView1.Rows.GetRowsHeight(DataGridViewElementStates.Visible) + 110;
         }
         public bool IsIPv6LocalLink(string input)
         {
@@ -216,6 +214,16 @@ namespace NICLister
             {
                 GetInterfaces();
             }
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            System.Diagnostics.Process.Start("NCPA.cpl");
         }
     }
 }
