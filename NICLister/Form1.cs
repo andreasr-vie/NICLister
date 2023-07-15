@@ -32,18 +32,19 @@ namespace NICLister
             dataGridView1.Rows.Clear();
             dataGridView1.RowHeadersVisible = false;
             dataGridView1.DefaultCellStyle.Alignment = DataGridViewContentAlignment.TopLeft;
-            dataGridView1.ColumnCount = 8;
+            dataGridView1.ColumnCount = 9;
             dataGridView1.Columns[0].Name = "Description";
             dataGridView1.Columns[1].Name = "Name";
             dataGridView1.Columns[2].Name = "MAC";
             dataGridView1.Columns[3].Name = "IPv4";
-            dataGridView1.Columns[4].Name = "DNS";
-            dataGridView1.Columns[5].Name = "Gateway";
-            dataGridView1.Columns[6].Name = "DHCP Active";
-            dataGridView1.Columns[7].Name = "DHCP-Server";
+            dataGridView1.Columns[4].Name = "Subnet";
+            dataGridView1.Columns[5].Name = "DNS";
+            dataGridView1.Columns[6].Name = "Gateway";
+            dataGridView1.Columns[7].Name = "DHCP Active";
+            dataGridView1.Columns[8].Name = "DHCP-Server";
 
 
-            string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi", "VMware", "Bluetooth"};
+            string[] ExcludeIFList = { "Wintun", "TAP", "Loopback", "Microsoft Wi-Fi", "VMware", "Bluetooth" };
             bool ContainsIF = false;
 
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
@@ -67,6 +68,7 @@ namespace NICLister
                     var gwv6 = new List<string>();
                     var dhcpv4 = new List<string>();
                     var dhcpv6 = new List<string>();
+                    var snm = new List<string>();
                     string dhcpenabled;
 
                     // Check if IF is DHCP-enabled
@@ -94,6 +96,15 @@ namespace NICLister
                             ipv4.Add(unicast.Address.ToString());
                         }
                     }
+
+
+                    // Subnetmask
+                    foreach (UnicastIPAddressInformation unicast in properties.UnicastAddresses)
+                    {
+                        if (!(IsZeroIP(unicast.IPv4Mask.ToString())))
+                            snm.Add(unicast.IPv4Mask.ToString());
+                    }
+
 
                     // DNS-Server (v4 und v6)
                     IPAddressCollection dnsServers = properties.DnsAddresses;
@@ -137,7 +148,7 @@ namespace NICLister
                         {
                             if (IPtype(address.Address.ToString()) == 6)
                             {
-                                if (!(IsIPv6LocalLink(address.Address.ToString()))) 
+                                if (!(IsIPv6LocalLink(address.Address.ToString())))
                                     gwv6.Add(address.Address.ToString());
                             }
                             else if (IPtype(address.Address.ToString()) == 4)
@@ -158,9 +169,10 @@ namespace NICLister
                     var dnslist = String.Join("\r\n", dnsv4.ToArray());
                     var gwlist = String.Join("\r\n", gwv4.ToArray());
                     var dhcplist = String.Join("\r\n", dhcpv4.ToArray());
+                    var snmlist = String.Join("\r\n", snm.ToArray());
 
                     // Daten im DataGridView ausgeben
-                    dataGridView1.Rows.Add(adapter.Description, adapter.Name, FormatMAC(System.Convert.ToString(adapter.GetPhysicalAddress())), iplist, dnslist, gwlist, dhcpenabled, dhcplist);
+                    dataGridView1.Rows.Add(adapter.Description, adapter.Name, FormatMAC(System.Convert.ToString(adapter.GetPhysicalAddress())), iplist, snmlist, dnslist, gwlist, dhcpenabled, dhcplist);
                 }
                 ContainsIF = false;
             }
@@ -177,12 +189,20 @@ namespace NICLister
             else
                 return false;
         }
+
+        public bool IsZeroIP(string input)
+        {
+            if (input == "0.0.0.0")
+                return true;
+            else
+                return false;
+        }
         public int IPtype(string input)
         {
             IPAddress address;
             if (IPAddress.TryParse(input, out address))
             {
-                switch(address.AddressFamily)
+                switch (address.AddressFamily)
                 {
                     case System.Net.Sockets.AddressFamily.InterNetwork:
                         //we have IPv4
@@ -210,7 +230,7 @@ namespace NICLister
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            if(e.KeyCode == Keys.F5)
+            if (e.KeyCode == Keys.F5)
             {
                 GetInterfaces();
             }
